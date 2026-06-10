@@ -1,16 +1,12 @@
 # n8n Setup Guide
 
-## Required: Set N8N_WEBHOOK_SECRET environment variable
+## Required: Set N8N_WEBHOOK_SECRET
 
-1. Go to **n8n** → **Settings** → **Environment Variables**
-2. Add: `N8N_WEBHOOK_SECRET` = your secret (must match Vercel env var)
-3. The workflows read this via `$env.N8N_WEBHOOK_SECRET`
+See **`ENV-SETUP.md`** for full step-by-step setup.
 
-Get your secret from Vercel:
-```bash
-cd job-agent && vercel env pull .env.local
-cat .env.local | grep N8N_WEBHOOK_SECRET
-```
+1. n8n → **Settings** → **Variables** → Add `N8N_WEBHOOK_SECRET`
+2. Value = same as Vercel (`vercel env pull .env.local`)
+3. Re-import workflows from GitHub after updates
 
 ---
 
