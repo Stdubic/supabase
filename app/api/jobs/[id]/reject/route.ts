@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isAuthenticated } from "@/lib/auth";
 import { getJob, updateJobStatus } from "@/lib/db";
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authed = await isAuthenticated();
+  if (!authed) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { id } = await params;
 
   try {

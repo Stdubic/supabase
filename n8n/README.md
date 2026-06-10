@@ -1,5 +1,13 @@
 # n8n workflows
 
+## Required setup
+
+1. **Set `N8N_WEBHOOK_SECRET` in n8n** (Settings → Environment Variables)
+   - Must match the value in Vercel env vars
+   - Workflows read it via `$env.N8N_WEBHOOK_SECRET`
+
+2. **Import from GitHub** (not from old local copies)
+
 **No Supabase credential needed.** Jobs are stored on Vercel Blob via the ingest API. If n8n asks for Supabase, you imported the wrong workflow — use the URLs below.
 
 | File | Purpose |

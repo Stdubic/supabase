@@ -32,7 +32,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const jobs = $input.first().json.jobs;\n\nconst response = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://job-agent-eosin.vercel.app/api/jobs/ingest',\n  headers: {\n    Authorization: 'Bearer 1c8f99a5b1fa5c468f9bc476d8837d9245b140554ed866bb',\n    'Content-Type': 'application/json',\n  },\n  body: jobs,\n  json: true,\n});\n\nreturn [{ json: response }];"
+        "jsCode": "// Requires n8n env var: N8N_WEBHOOK_SECRET\n// Set in n8n Settings > Environment Variables\nconst secret = $env.N8N_WEBHOOK_SECRET;\nif (!secret) throw new Error('Set N8N_WEBHOOK_SECRET in n8n environment variables');\n\nconst jobs = $input.first().json.jobs;\n\nconst response = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://job-agent-eosin.vercel.app/api/jobs/ingest',\n  headers: {\n    Authorization: `Bearer ${secret}`,\n    'Content-Type': 'application/json',\n  },\n  body: jobs,\n  json: true,\n});\n\nreturn [{ json: response }];"
       },
       "id": "ingest",
       "name": "Ingest to Vercel",
