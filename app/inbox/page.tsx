@@ -16,13 +16,17 @@ export default async function InboxPage() {
   const preparedJobs = await getJobs("prepared");
   const appliedJobs = await getJobs("applied");
   const interviewJobs = await getJobs("interview");
+  const failedJobs = await getJobs("failed");
+  const rejectedJobs = await getJobs("rejected");
 
   const hasJobs =
     pendingJobs.length > 0 ||
     approvedJobs.length > 0 ||
     preparedJobs.length > 0 ||
     appliedJobs.length > 0 ||
-    interviewJobs.length > 0;
+    interviewJobs.length > 0 ||
+    failedJobs.length > 0 ||
+    rejectedJobs.length > 0;
 
   return (
     <div className="container">
@@ -82,6 +86,15 @@ export default async function InboxPage() {
             <section style={{ marginBottom: "40px" }}>
               <h2 className="section-title stat-interview">Interview</h2>
               <JobList jobs={interviewJobs} showFolder />
+            </section>
+          )}
+
+          {(failedJobs.length > 0 || rejectedJobs.length > 0) && (
+            <section style={{ marginBottom: "40px" }}>
+              <h2 className="section-title" style={{ color: "#9aa0a6" }}>
+                Archive ({failedJobs.length + rejectedJobs.length})
+              </h2>
+              <JobList jobs={[...failedJobs, ...rejectedJobs]} />
             </section>
           )}
         </>

@@ -22,7 +22,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const jobs = $input.first().json.jobs || [];\n\nconst filtered = jobs\n  .filter(job => {\n    const text = `${job.title} ${job.description || ''}`.toLowerCase();\n    return ['php', 'laravel', 'symfony', 'backend'].some(k => text.includes(k));\n  })\n  .slice(0, 5)\n  .map(job => ({\n    title: job.title,\n    company: job.company_name,\n    url: job.url,\n    description: (job.description || '').slice(0, 2000),\n    source: 'remotive',\n    location: job.candidate_required_location || 'Remote',\n    salary: job.salary || null\n  }));\n\nif (filtered.length === 0) {\n  throw new Error('No matching jobs after filter — try broader keywords');\n}\n\nreturn [{ json: { jobs: filtered } }];"
+        "jsCode": "const DEV = ['developer','engineer','programming','software','backend','php','laravel','symfony'];\nconst EXCL = ['wordpress only','ios developer','android developer'];\nconst match = (t,d) => { const x=`${t} ${d||''}`.toLowerCase(); return DEV.some(k=>x.includes(k)) && !EXCL.some(k=>x.includes(k)); };\n\nconst jobs = ($input.first().json.jobs || []).filter(j => match(j.title, j.description)).slice(0, 5).map(job => ({\n  title: job.title,\n  company: job.company_name,\n  url: job.url,\n  description: (job.description || '').slice(0, 2000),\n  source: 'remotive',\n  location: job.candidate_required_location || 'Remote',\n  salary: job.salary || null\n}));\n\nif (jobs.length === 0) throw new Error('No matching jobs after filter');\nreturn [{ json: { jobs } }];"
       },
       "id": "parse-filter",
       "name": "Parse and Filter",

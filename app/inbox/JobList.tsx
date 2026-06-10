@@ -144,6 +144,17 @@ function JobCard({
     }
   }
 
+  async function copyCoverLetter() {
+    try {
+      const res = await fetch(`/api/jobs/${job.id}/cover-letter`);
+      if (!res.ok) throw new Error("Cover letter not found");
+      const data = await res.json();
+      await copyToClipboard(data.content, "cover");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to copy cover letter");
+    }
+  }
+
   async function handleMarkApplied(channel: string = "email") {
     setLoading("apply");
     setError(null);
@@ -309,6 +320,17 @@ function JobCard({
                       }}
                     >
                       {copied === "subject" ? "Copied!" : "Copy Subject"}
+                    </button>
+                    <button
+                      onClick={copyCoverLetter}
+                      className="btn"
+                      style={{
+                        fontSize: "13px",
+                        padding: "6px 12px",
+                        background: "#374151",
+                      }}
+                    >
+                      {copied === "cover" ? "Copied!" : "Copy Cover Letter"}
                     </button>
                   </>
                 ) : (

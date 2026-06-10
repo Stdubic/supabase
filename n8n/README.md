@@ -13,7 +13,9 @@
 | File | Purpose |
 |------|---------|
 | `workflow-test-ingest.json` | Manual test: Remotive → filter → ingest (use this first) |
-| `workflow-job-discovery.json` | Daily cron 08:00 Amsterdam: multiple sources + email |
+| `workflow-job-discovery.json` | Daily cron 08:00 Amsterdam: **6 sources** in one Code node |
+
+**Job sources (daily workflow):** Remotive, We Work Remotely, Arbeitnow, RemoteOK, Jobicy, Himalayas
 | `SETUP-INGEST.md` | Fix "Credentials not found" and re-import steps |
 
 ## Import
