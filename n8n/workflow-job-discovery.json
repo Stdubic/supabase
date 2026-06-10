@@ -168,6 +168,7 @@
         "url": "https://job-agent-eosin.vercel.app/api/jobs/ingest",
         "authentication": "none",
         "sendHeaders": true,
+        "specifyHeaders": "keypair",
         "headerParameters": {
           "parameters": [
             {
