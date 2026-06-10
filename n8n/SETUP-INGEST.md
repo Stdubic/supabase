@@ -1,36 +1,30 @@
-# Fix: "Problem in node Ingest to Vercel"
+# Fix: "Credentials not found" on Ingest to Vercel
 
-## 1. Credential (most common cause)
+## Option A — fix in 30 seconds (no re-import)
 
-In n8n → **Credentials** → **New** → **Header Auth**:
+Open node **Ingest to Vercel**:
 
-| Field | Value |
-|-------|--------|
-| **Name** | `Job Agent Webhook` |
-| **Header Name** | `Authorization` |
-| **Header Value** | `Bearer 1c8f99a5b1fa5c468f9bc476d8837d9245b140554ed866bb` |
+1. **Authentication** → `None`
+2. **Send Headers** → ON
+3. Add header:
+   - Name: `Authorization`
+   - Value: `Bearer 1c8f99a5b1fa5c468f9bc476d8837d9245b140554ed866bb`
+4. Add header:
+   - Name: `Content-Type`
+   - Value: `application/json`
+5. **Body** → Raw → `application/json`
+6. Body content: `={{ JSON.stringify($json.jobs) }}`
 
-Important: include the word `Bearer` and a space before the secret.
+Save and run workflow.
 
-Then open workflow → **Ingest to Vercel** node → select credential **Job Agent Webhook**.
+## Option B — re-import workflow
 
-## 2. Re-import fixed workflow
+Delete old workflow, import fresh `workflow-test-ingest.json` from repo (credential no longer required).
 
-Delete old workflow, import fresh:
-- `workflow-test-ingest.json` (manual test)
-- `workflow-job-discovery.json` (daily cron)
+## Expected result
 
-## 3. Test order
+```json
+{ "success": true, "inserted": 1, ... }
+```
 
-1. **Manual Test** → **Fetch Remotive** → **Parse and Filter** → **Ingest to Vercel**
-2. Check output of **Parse and Filter** — must show `{ jobs: [...] }` with at least 1 job
-3. **Ingest** should return `{ success: true, inserted: N }`
-
-## 4. Error meanings
-
-| Error | Fix |
-|-------|-----|
-| `401 Unauthorized` | Wrong credential or missing `Bearer` prefix |
-| `Credentials not found` | Create and assign **Job Agent Webhook** credential |
-| `No matching jobs after filter` | Normal sometimes — run again or broaden filter in Code node |
-| `JSON parameter needs to be valid JSON` | Re-import fixed workflow (uses raw body now) |
+Then check https://job-agent-eosin.vercel.app/inbox

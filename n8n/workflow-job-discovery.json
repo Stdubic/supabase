@@ -166,11 +166,14 @@
       "parameters": {
         "method": "POST",
         "url": "https://job-agent-eosin.vercel.app/api/jobs/ingest",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
+        "authentication": "none",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 1c8f99a5b1fa5c468f9bc476d8837d9245b140554ed866bb"
+            },
             {
               "name": "Content-Type",
               "value": "application/json"
@@ -187,12 +190,7 @@
       "name": "Ingest to Vercel",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1320, 200],
-      "credentials": {
-        "httpHeaderAuth": {
-          "name": "Job Agent Webhook"
-        }
-      }
+      "position": [1320, 200]
     },
     {
       "parameters": {
