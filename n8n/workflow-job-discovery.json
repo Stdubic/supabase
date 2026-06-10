@@ -104,7 +104,7 @@
     },
     {
       "parameters": {
-        "url": "={{ $env.VERCEL_APP_URL }}/api/jobs?urls_only=true",
+        "url": "https://job-agent-eosin.vercel.app/api/jobs?urls_only=true",
         "options": {}
       },
       "id": "get-known-urls",
@@ -155,7 +155,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.VERCEL_APP_URL }}/api/jobs/ingest",
+        "url": "https://job-agent-eosin.vercel.app/api/jobs/ingest",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
@@ -181,7 +181,7 @@
         "toEmail": "={{ $env.NOTIFICATION_EMAIL }}",
         "subject": "=Job Agent: {{ $('Filter Duplicates').all().length }} new jobs found",
         "emailType": "text",
-        "message": "=Job Agent found {{ $('Filter Duplicates').all().length }} new job postings.\n\nTop matches:\n{{ $('Filter Duplicates').all().slice(0, 5).map(j => `- ${j.json.title} at ${j.json.company}`).join('\\n') }}\n\nReview and approve: {{ $env.VERCEL_APP_URL }}/inbox"
+        "message": "=Job Agent found {{ $('Filter Duplicates').all().length }} new job postings.\n\nTop matches:\n{{ $('Filter Duplicates').all().slice(0, 5).map(j => `- ${j.json.title} at ${j.json.company}`).join('\\n') }}\n\nReview and approve: https://job-agent-eosin.vercel.app/inbox"
       },
       "id": "send-notification",
       "name": "Send Email",

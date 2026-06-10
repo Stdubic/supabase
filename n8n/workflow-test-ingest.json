@@ -33,7 +33,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $vars.VERCEL_APP_URL }}/api/jobs/ingest",
+        "url": "https://job-agent-eosin.vercel.app/api/jobs/ingest",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendBody": true,
