@@ -56,6 +56,26 @@ return [{ json: response }];
 
 Connect **Parse and Filter** (or **Prepare Payload**) → this node. Save and run.
 
+## Fix: "Send to Webhook" — resource could not be found (404)
+
+You are **not** on the correct workflow. Our test workflow has **Ingest to Vercel** (Code), not **Send to Webhook**.
+
+If you keep an HTTP / Webhook node, set **exactly**:
+
+| Field | Value |
+|-------|--------|
+| Method | `POST` |
+| URL | `https://job-agent-eosin.vercel.app/api/jobs/ingest` |
+| Header | `Authorization` = `Bearer 1c8f99a5b1fa5c468f9bc476d8837d9245b140554ed866bb` |
+| Header | `Content-Type` = `application/json` |
+| Body | JSON array of jobs (or `={{ JSON.stringify($json.jobs) }}`) |
+
+Also works: `https://job-agent-eosin.vercel.app/api/webhook` (alias to same handler).
+
+**Wrong URLs (404):** `/webhook`, n8n `*.n8n.cloud/webhook/...`, `job-agent.vercel.app` (without `-eosin`).
+
+**Best fix:** delete workflow → re-import `workflow-test-ingest.json` (see URL above).
+
 ## Expected result
 
 ```json
