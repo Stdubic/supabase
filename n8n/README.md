@@ -1,0 +1,30 @@
+# n8n workflows
+
+| File | Purpose |
+|------|---------|
+| `workflow-test-ingest.json` | Manual test: Remotive → filter → ingest (use this first) |
+| `workflow-job-discovery.json` | Daily cron 08:00 Amsterdam: multiple sources + email |
+| `SETUP-INGEST.md` | Fix "Credentials not found" and re-import steps |
+
+## Import
+
+**From GitHub (after push to `main`):**
+
+- Test: https://raw.githubusercontent.com/Stdubic/supabase/main/n8n/workflow-test-ingest.json
+- Daily: https://raw.githubusercontent.com/Stdubic/supabase/main/n8n/workflow-job-discovery.json
+
+In n8n: **Workflows** → **Import from URL** or **Import from File**.
+
+## Ingest node
+
+**Ingest to Vercel** is a **Code** node (not HTTP Request). It posts jobs with `this.helpers.httpRequest` and embeds the Bearer token — no n8n credential store entry needed.
+
+If you still have an HTTP Request node with Header Auth, delete the workflow and re-import.
+
+## Test without n8n
+
+```bash
+cd job-agent
+N8N_WEBHOOK_SECRET=your-secret ./scripts/simulate-n8n-discovery.sh
+./scripts/test-ingest.sh https://job-agent-eosin.vercel.app your-secret
+```

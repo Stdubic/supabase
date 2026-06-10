@@ -13,7 +13,7 @@ cd job-agent && npm install
 vercel
 
 # 3. Add GitHub repo secrets (OPENAI_API_KEY, VERCEL_APP_URL, VERCEL_CALLBACK_SECRET)
-# 4. Import n8n workflow and configure credentials
+# 4. Import n8n workflow (no ingest credentials needed — see n8n/SETUP-INGEST.md)
 # 5. Activate workflow → jobs appear in your inbox daily at 08:00
 ```
 
@@ -79,18 +79,19 @@ Add these secrets to your cv repo (Settings → Secrets and variables → Action
 ### 4. n8n Workflow
 
 1. Go to your n8n instance: https://dub1c.app.n8n.cloud
-2. Click **Workflows** → **Import from File**
-3. Select `n8n/workflow-job-discovery.json`
-4. Create credentials:
-   - **HTTP Header Auth** named "Webhook Auth":
-     - Header Name: `Authorization`
-     - Header Value: `Bearer YOUR_N8N_WEBHOOK_SECRET`
-   - **SMTP** for email notifications (optional, use Gmail App Password or similar)
-5. Set environment variables in n8n (Settings → Environment Variables):
-   - `VERCEL_APP_URL`: Your deployed Vercel app URL (e.g. `https://job-agent.vercel.app`)
-   - `NOTIFICATION_EMAIL`: Your email (e.g. `stevandaleksic@gmail.com`)
-6. Test the workflow manually first (click Execute Workflow)
-7. Activate the workflow (toggle Active switch)
+2. **Delete** any old "Job Agent" workflows (stale imports may reference missing credentials).
+3. Import workflows — pick one:
+   - **Test ingest:** `n8n/workflow-test-ingest.json` (manual trigger, Remotive → inbox)
+   - **Daily cron:** `n8n/workflow-job-discovery.json` (08:00 Amsterdam)
+   - **From GitHub:**  
+     `https://raw.githubusercontent.com/Stdubic/supabase/main/n8n/workflow-test-ingest.json`
+4. **Ingest to Vercel** is a **Code** node — it calls the API with `this.helpers.httpRequest` and needs **no n8n credentials**. The Bearer token is embedded in the node (must match `N8N_WEBHOOK_SECRET` in Vercel).
+5. Optional: **SMTP** credential for the **Send Email** node in the daily workflow.
+6. Optional n8n env vars: `NOTIFICATION_EMAIL` for email summaries.
+7. Run **Manual Test** on the test workflow → expect `{ "success": true, "inserted": N }`.
+8. Activate the daily workflow when ready.
+
+See **`n8n/SETUP-INGEST.md`** if you see "Credentials not found".
 
 **Screenshot for n8n EM application:** After importing, take a screenshot of the workflow canvas and add it to your n8n application materials.
 
@@ -160,9 +161,10 @@ npm run dev
 ## Troubleshooting
 
 ### Jobs not appearing
-- Check n8n workflow execution logs
-- Verify `N8N_WEBHOOK_SECRET` matches in n8n and Vercel
-- Check Supabase logs for insert errors
+- Check n8n workflow execution logs (node **Ingest to Vercel** should be type **Code**, not HTTP Request)
+- Re-import from `n8n/workflow-test-ingest.json` — see `n8n/SETUP-INGEST.md`
+- Verify Bearer token in the Code node matches `N8N_WEBHOOK_SECRET` in Vercel
+- Run `./scripts/test-ingest.sh https://your-app.vercel.app YOUR_SECRET` to test API without n8n
 
 ### GitHub Action failing
 - Check Actions tab in your cv repo

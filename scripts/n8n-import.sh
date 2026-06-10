@@ -26,5 +26,5 @@ for f in "$ROOT/n8n"/workflow-*.json; do
 done
 
 echo ""
-echo "Next: In n8n UI set variable VERCEL_APP_URL=$VERCEL_APP_URL"
-echo "Create HTTP Header Auth credential: Authorization = Bearer YOUR_N8N_WEBHOOK_SECRET"
+echo "Next: Run Manual Test on 'Job Agent - Test Ingest' in n8n UI."
+echo "Ingest uses a Code node (no credentials). See n8n/SETUP-INGEST.md"

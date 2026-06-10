@@ -20,17 +20,19 @@
 ### 1. n8n workflow
 
 1. Open https://dub1c.app.n8n.cloud
-2. **Workflows** → **Import from File**
-3. Import `n8n/workflow-test-ingest.json` (manual test) or `n8n/workflow-job-discovery.json` (daily cron)
-4. Create credential **HTTP Header Auth** named `Job Agent Webhook`:
-   - Header: `Authorization`
-   - Value: `Bearer <your N8N_WEBHOOK_SECRET from Vercel env>`
-5. Assign credential to **Ingest to Vercel** node
-6. Run **Test workflow** manually, then activate
+2. Delete old Job Agent workflows (avoid stale credential references)
+3. Import from URL or file:
+   - Test: https://raw.githubusercontent.com/Stdubic/supabase/main/n8n/workflow-test-ingest.json
+   - Daily: https://raw.githubusercontent.com/Stdubic/supabase/main/n8n/workflow-job-discovery.json
+4. **Ingest to Vercel** is a **Code** node — no HTTP Header Auth credential required
+5. Run **Manual Test** → check https://job-agent-eosin.vercel.app/inbox
+6. Activate daily workflow when satisfied
 
-Or with API key:
+Troubleshooting: `n8n/SETUP-INGEST.md`
+
+API import (optional):
 ```bash
-N8N_API_KEY=xxx N8N_WEBHOOK_SECRET=xxx ./scripts/n8n-import.sh
+N8N_API_KEY=xxx ./scripts/n8n-import.sh
 ```
 
 ### 2. GitHub token (for Approve → prepare application)

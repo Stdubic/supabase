@@ -22,7 +22,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const jobs = $input.first().json.jobs || [];\n\nconst filtered = jobs\n  .filter(job => {\n    const text = `${job.title} ${job.description || ''}`.toLowerCase();\n    return ['php', 'laravel', 'symfony', 'backend'].some(k => text.includes(k));\n  })\n  .slice(0, 5)\n  .map(job => ({\n    title: job.title,\n    company: job.company_name,\n    url: job.url,\n    description: (job.description || '').slice(0, 2000),\n    source: 'remotive',\n    location: job.candidate_required_location || 'Remote',\n    salary: job.salary || null\n  }));\n\nif (filtered.length === 0) {\n  throw new Error('No matching jobs after filter — try broader keywords');\n}\n\n// Single item with array payload for HTTP node\nreturn [{ json: { jobs: filtered } }];"
+        "jsCode": "const jobs = $input.first().json.jobs || [];\n\nconst filtered = jobs\n  .filter(job => {\n    const text = `${job.title} ${job.description || ''}`.toLowerCase();\n    return ['php', 'laravel', 'symfony', 'backend'].some(k => text.includes(k));\n  })\n  .slice(0, 5)\n  .map(job => ({\n    title: job.title,\n    company: job.company_name,\n    url: job.url,\n    description: (job.description || '').slice(0, 2000),\n    source: 'remotive',\n    location: job.candidate_required_location || 'Remote',\n    salary: job.salary || null\n  }));\n\nif (filtered.length === 0) {\n  throw new Error('No matching jobs after filter — try broader keywords');\n}\n\nreturn [{ json: { jobs: filtered } }];"
       },
       "id": "parse-filter",
       "name": "Parse and Filter",
@@ -32,33 +32,12 @@
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "https://job-agent-eosin.vercel.app/api/jobs/ingest",
-        "authentication": "none",
-        "sendHeaders": true,
-        "specifyHeaders": "keypair",
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Authorization",
-              "value": "Bearer 1c8f99a5b1fa5c468f9bc476d8837d9245b140554ed866bb"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "contentType": "raw",
-        "rawContentType": "application/json",
-        "body": "={{ JSON.stringify($json.jobs) }}",
-        "options": {}
+        "jsCode": "const jobs = $input.first().json.jobs;\n\nconst response = await this.helpers.httpRequest({\n  method: 'POST',\n  url: 'https://job-agent-eosin.vercel.app/api/jobs/ingest',\n  headers: {\n    Authorization: 'Bearer 1c8f99a5b1fa5c468f9bc476d8837d9245b140554ed866bb',\n    'Content-Type': 'application/json',\n  },\n  body: jobs,\n  json: true,\n});\n\nreturn [{ json: response }];"
       },
       "id": "ingest",
       "name": "Ingest to Vercel",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [660, 300]
     }
   ],
