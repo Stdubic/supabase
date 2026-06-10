@@ -1,0 +1,287 @@
+{
+  "name": "Job Discovery Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 24,
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Daily 8AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://remotive.com/api/remote-jobs?category=software-dev",
+        "options": {}
+      },
+      "id": "fetch-remotive",
+      "name": "Fetch Remotive",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 100]
+    },
+    {
+      "parameters": {
+        "url": "https://weworkremotely.com/categories/remote-programming-jobs.rss",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "id": "fetch-wwr",
+      "name": "Fetch WWR RSS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://www.arbeitnow.com/api/job-board-api",
+        "options": {}
+      },
+      "id": "fetch-arbeitnow",
+      "name": "Fetch Arbeitnow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse Remotive API response\nconst jobs = $input.first().json.jobs || [];\n\nreturn jobs\n  .filter(job => {\n    const text = `${job.title} ${job.description || ''} ${job.category || ''}`.toLowerCase();\n    const hasDevKeyword = ['developer', 'engineer', 'backend', 'php', 'laravel', 'symfony', 'software'].some(kw => text.includes(kw));\n    const isExcluded = ['wordpress only', 'ios developer', 'android developer', 'mobile developer'].some(kw => text.includes(kw));\n    return hasDevKeyword && !isExcluded;\n  })\n  .slice(0, 50)\n  .map(job => ({\n    json: {\n      title: job.title,\n      company: job.company_name,\n      url: job.url,\n      description: job.description,\n      source: 'remotive',\n      location: job.candidate_required_location || 'Remote',\n      salary: job.salary || null,\n      category: job.category\n    }\n  }));"
+      },
+      "id": "parse-remotive",
+      "name": "Parse Remotive",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 100]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse WWR RSS (XML text)\nconst text = $input.first().json.data || $input.first().json.body || '';\n\nconst items = [];\nconst itemRegex = /<item>([\\s\\S]*?)<\\/item>/g;\nlet match;\n\nwhile ((match = itemRegex.exec(text)) !== null) {\n  const item = match[1];\n  const title = (item.match(/<title><!\\[CDATA\\[(.+?)\\]\\]><\\/title>/) || item.match(/<title>(.+?)<\\/title>/) || [])[1] || '';\n  const link = (item.match(/<link>(.+?)<\\/link>/) || [])[1] || '';\n  const description = (item.match(/<description><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/description>/) || item.match(/<description>([\\s\\S]*?)<\\/description>/) || [])[1] || '';\n  \n  if (title && link) {\n    const text = `${title} ${description}`.toLowerCase();\n    const hasDevKeyword = ['developer', 'engineer', 'backend', 'php', 'laravel', 'symfony', 'software'].some(kw => text.includes(kw));\n    const isExcluded = ['wordpress only', 'ios developer', 'android developer'].some(kw => text.includes(kw));\n    \n    if (hasDevKeyword && !isExcluded) {\n      // Extract company from title (format: \"Title: Company\")\n      const parts = title.split(':');\n      const jobTitle = parts[0]?.trim() || title;\n      const company = parts[1]?.trim() || 'Unknown';\n      \n      items.push({\n        json: {\n          title: jobTitle,\n          company: company,\n          url: link,\n          description: description.replace(/<[^>]*>/g, ' ').trim(),\n          source: 'weworkremotely',\n          location: 'Remote',\n          salary: null,\n          category: 'programming'\n        }\n      });\n    }\n  }\n}\n\nreturn items.slice(0, 30);"
+      },
+      "id": "parse-wwr",
+      "name": "Parse WWR",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse Arbeitnow API response\nconst jobs = $input.first().json.data || [];\n\nreturn jobs\n  .filter(job => {\n    const text = `${job.title} ${job.description || ''} ${job.tags?.join(' ') || ''}`.toLowerCase();\n    const hasDevKeyword = ['developer', 'engineer', 'backend', 'php', 'laravel', 'symfony', 'software', 'programming'].some(kw => text.includes(kw));\n    const isRemote = job.remote === true || text.includes('remote');\n    const isExcluded = ['wordpress only', 'ios developer', 'android developer'].some(kw => text.includes(kw));\n    return hasDevKeyword && isRemote && !isExcluded;\n  })\n  .slice(0, 30)\n  .map(job => ({\n    json: {\n      title: job.title,\n      company: job.company_name,\n      url: job.url,\n      description: job.description,\n      source: 'arbeitnow',\n      location: job.location || 'Remote',\n      salary: job.salary || null,\n      category: job.tags?.join(', ') || null\n    }\n  }));"
+      },
+      "id": "parse-arbeitnow",
+      "name": "Parse Arbeitnow",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 500]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "mergeByFields": {
+          "values": []
+        },
+        "options": {}
+      },
+      "id": "merge-jobs",
+      "name": "Merge All Jobs",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.VERCEL_APP_URL }}/api/jobs?urls_only=true",
+        "options": {}
+      },
+      "id": "get-known-urls",
+      "name": "Get Known URLs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [660, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filter out already known URLs\nconst knownUrlsItem = $('Get Known URLs').first();\nconst knownUrls = new Set(knownUrlsItem?.json?.urls || []);\n\nconst allJobs = $('Merge All Jobs').all();\nconst newJobs = allJobs.filter(item => !knownUrls.has(item.json.url));\n\nconsole.log(`Total jobs: ${allJobs.length}, New jobs: ${newJobs.length}`);\n\nreturn newJobs;"
+      },
+      "id": "filter-duplicates",
+      "name": "Filter Duplicates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-jobs",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-has-jobs",
+      "name": "Has New Jobs?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1100, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.VERCEL_APP_URL }}/api/jobs/ingest",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($input.all().map(i => i.json)) }}",
+        "options": {}
+      },
+      "id": "ingest-jobs",
+      "name": "Ingest to Vercel",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 200],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "webhook-auth",
+          "name": "Webhook Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $env.NOTIFICATION_EMAIL }}",
+        "toEmail": "={{ $env.NOTIFICATION_EMAIL }}",
+        "subject": "=Job Agent: {{ $('Filter Duplicates').all().length }} new jobs found",
+        "emailType": "text",
+        "message": "=Job Agent found {{ $('Filter Duplicates').all().length }} new job postings.\n\nTop matches:\n{{ $('Filter Duplicates').all().slice(0, 5).map(j => `- ${j.json.title} at ${j.json.company}`).join('\\n') }}\n\nReview and approve: {{ $env.VERCEL_APP_URL }}/inbox"
+      },
+      "id": "send-notification",
+      "name": "Send Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1540, 200],
+      "credentials": {
+        "smtp": {
+          "id": "smtp-creds",
+          "name": "SMTP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// No new jobs found\nreturn [{ json: { message: 'No new jobs found today' } }];"
+      },
+      "id": "no-jobs",
+      "name": "No New Jobs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1320, 400]
+    }
+  ],
+  "connections": {
+    "Daily 8AM": {
+      "main": [
+        [
+          { "node": "Fetch Remotive", "type": "main", "index": 0 },
+          { "node": "Fetch WWR RSS", "type": "main", "index": 0 },
+          { "node": "Fetch Arbeitnow", "type": "main", "index": 0 },
+          { "node": "Get Known URLs", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Fetch Remotive": {
+      "main": [
+        [{ "node": "Parse Remotive", "type": "main", "index": 0 }]
+      ]
+    },
+    "Fetch WWR RSS": {
+      "main": [
+        [{ "node": "Parse WWR", "type": "main", "index": 0 }]
+      ]
+    },
+    "Fetch Arbeitnow": {
+      "main": [
+        [{ "node": "Parse Arbeitnow", "type": "main", "index": 0 }]
+      ]
+    },
+    "Parse Remotive": {
+      "main": [
+        [{ "node": "Merge All Jobs", "type": "main", "index": 0 }]
+      ]
+    },
+    "Parse WWR": {
+      "main": [
+        [{ "node": "Merge All Jobs", "type": "main", "index": 0 }]
+      ]
+    },
+    "Parse Arbeitnow": {
+      "main": [
+        [{ "node": "Merge All Jobs", "type": "main", "index": 0 }]
+      ]
+    },
+    "Merge All Jobs": {
+      "main": [
+        [{ "node": "Filter Duplicates", "type": "main", "index": 0 }]
+      ]
+    },
+    "Get Known URLs": {
+      "main": [
+        [{ "node": "Filter Duplicates", "type": "main", "index": 0 }]
+      ]
+    },
+    "Filter Duplicates": {
+      "main": [
+        [{ "node": "Has New Jobs?", "type": "main", "index": 0 }]
+      ]
+    },
+    "Has New Jobs?": {
+      "main": [
+        [{ "node": "Ingest to Vercel", "type": "main", "index": 0 }],
+        [{ "node": "No New Jobs", "type": "main", "index": 0 }]
+      ]
+    },
+    "Ingest to Vercel": {
+      "main": [
+        [{ "node": "Send Email", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "timezone": "Europe/Amsterdam"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "pinData": {}
+}

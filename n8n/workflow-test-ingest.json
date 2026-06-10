@@ -1,0 +1,72 @@
+{
+  "name": "Job Agent - Test Ingest",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Manual Test",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://remotive.com/api/remote-jobs?category=software-dev",
+        "options": {}
+      },
+      "id": "fetch-remotive",
+      "name": "Fetch Remotive",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const jobs = $input.first().json.jobs || [];\nconst filtered = jobs\n  .filter(job => {\n    const text = `${job.title} ${job.description || ''}`.toLowerCase();\n    return ['php', 'laravel', 'symfony', 'backend'].some(k => text.includes(k));\n  })\n  .slice(0, 5)\n  .map(job => ({\n    title: job.title,\n    company: job.company_name,\n    url: job.url,\n    description: (job.description || '').slice(0, 2000),\n    source: 'remotive',\n    location: job.candidate_required_location || 'Remote',\n    salary: job.salary || null\n  }));\n\nreturn filtered.map(j => ({ json: j }));"
+      },
+      "id": "parse-filter",
+      "name": "Parse and Filter",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $vars.VERCEL_APP_URL }}/api/jobs/ingest",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($input.all().map(i => i.json)) }}",
+        "options": {}
+      },
+      "id": "ingest",
+      "name": "Ingest to Vercel",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [660, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_CREDENTIAL_ID",
+          "name": "Job Agent Webhook"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Manual Test": {
+      "main": [[{ "node": "Fetch Remotive", "type": "main", "index": 0 }]]
+    },
+    "Fetch Remotive": {
+      "main": [[{ "node": "Parse and Filter", "type": "main", "index": 0 }]]
+    },
+    "Parse and Filter": {
+      "main": [[{ "node": "Ingest to Vercel", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Amsterdam"
+  }
+}
