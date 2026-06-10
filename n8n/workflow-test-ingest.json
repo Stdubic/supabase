@@ -22,7 +22,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const jobs = $input.first().json.jobs || [];\nconst filtered = jobs\n  .filter(job => {\n    const text = `${job.title} ${job.description || ''}`.toLowerCase();\n    return ['php', 'laravel', 'symfony', 'backend'].some(k => text.includes(k));\n  })\n  .slice(0, 5)\n  .map(job => ({\n    title: job.title,\n    company: job.company_name,\n    url: job.url,\n    description: (job.description || '').slice(0, 2000),\n    source: 'remotive',\n    location: job.candidate_required_location || 'Remote',\n    salary: job.salary || null\n  }));\n\nreturn filtered.map(j => ({ json: j }));"
+        "jsCode": "const jobs = $input.first().json.jobs || [];\n\nconst filtered = jobs\n  .filter(job => {\n    const text = `${job.title} ${job.description || ''}`.toLowerCase();\n    return ['php', 'laravel', 'symfony', 'backend'].some(k => text.includes(k));\n  })\n  .slice(0, 5)\n  .map(job => ({\n    title: job.title,\n    company: job.company_name,\n    url: job.url,\n    description: (job.description || '').slice(0, 2000),\n    source: 'remotive',\n    location: job.candidate_required_location || 'Remote',\n    salary: job.salary || null\n  }));\n\nif (filtered.length === 0) {\n  throw new Error('No matching jobs after filter — try broader keywords');\n}\n\n// Single item with array payload for HTTP node\nreturn [{ json: { jobs: filtered } }];"
       },
       "id": "parse-filter",
       "name": "Parse and Filter",
@@ -36,9 +36,19 @@
         "url": "https://job-agent-eosin.vercel.app/api/jobs/ingest",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
         "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify($input.all().map(i => i.json)) }}",
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($json.jobs) }}",
         "options": {}
       },
       "id": "ingest",
@@ -48,7 +58,6 @@
       "position": [660, 300],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "REPLACE_WITH_CREDENTIAL_ID",
           "name": "Job Agent Webhook"
         }
       }

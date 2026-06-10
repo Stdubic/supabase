@@ -20,10 +20,26 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const payload = await request.json();
-    const jobs: IngestJobPayload[] = Array.isArray(payload)
-      ? payload
-      : [payload];
+    let payload: unknown = await request.json();
+
+    // n8n sometimes double-encodes JSON as a string
+    if (typeof payload === "string") {
+      payload = JSON.parse(payload);
+    }
+
+    let jobs: IngestJobPayload[];
+    if (Array.isArray(payload)) {
+      jobs = payload;
+    } else if (
+      payload &&
+      typeof payload === "object" &&
+      "jobs" in payload &&
+      Array.isArray((payload as { jobs: unknown }).jobs)
+    ) {
+      jobs = (payload as { jobs: IngestJobPayload[] }).jobs;
+    } else {
+      jobs = [payload as IngestJobPayload];
+    }
 
     const knownUrls = new Set(await getKnownUrls());
 

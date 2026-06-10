@@ -154,13 +154,33 @@
     },
     {
       "parameters": {
+        "jsCode": "const jobs = $input.all().map(i => i.json);\nif (jobs.length === 0) {\n  throw new Error('No new jobs to ingest');\n}\nreturn [{ json: { jobs } }];"
+      },
+      "id": "prepare-payload",
+      "name": "Prepare Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1210, 200]
+    },
+    {
+      "parameters": {
         "method": "POST",
         "url": "https://job-agent-eosin.vercel.app/api/jobs/ingest",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
         "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify($input.all().map(i => i.json)) }}",
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($json.jobs) }}",
         "options": {}
       },
       "id": "ingest-jobs",
@@ -170,8 +190,7 @@
       "position": [1320, 200],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "webhook-auth",
-          "name": "Webhook Auth"
+          "name": "Job Agent Webhook"
         }
       }
     },
@@ -264,8 +283,13 @@
     },
     "Has New Jobs?": {
       "main": [
-        [{ "node": "Ingest to Vercel", "type": "main", "index": 0 }],
+        [{ "node": "Prepare Payload", "type": "main", "index": 0 }],
         [{ "node": "No New Jobs", "type": "main", "index": 0 }]
+      ]
+    },
+    "Prepare Payload": {
+      "main": [
+        [{ "node": "Ingest to Vercel", "type": "main", "index": 0 }]
       ]
     },
     "Ingest to Vercel": {
