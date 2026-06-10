@@ -1,23 +1,44 @@
-import { list, put } from "@vercel/blob";
+import { get, put } from "@vercel/blob";
 import { Job } from "./db";
 
 const INDEX_PATH = "jobs/index.json";
 
 function hasBlob(): boolean {
-  return !!process.env.BLOB_READ_WRITE_TOKEN;
+  return !!(
+    process.env.BLOB_READ_WRITE_TOKEN ||
+    process.env.BLOB_STORE_ID
+  );
+}
+
+async function readStream(
+  stream: ReadableStream<Uint8Array>
+): Promise<string> {
+  const reader = stream.getReader();
+  const chunks: Uint8Array[] = [];
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (value) chunks.push(value);
+  }
+  const total = chunks.reduce((n, c) => n + c.length, 0);
+  const merged = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    merged.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return new TextDecoder().decode(merged);
 }
 
 async function readIndex(): Promise<Job[]> {
   if (!hasBlob()) return [];
 
   try {
-    const { blobs } = await list({ prefix: "jobs/", limit: 1 });
-    const indexBlob = blobs.find((b) => b.pathname === INDEX_PATH);
-    if (!indexBlob) return [];
+    const result = await get(INDEX_PATH, { access: "private", useCache: false });
+    if (!result || result.statusCode !== 200 || !result.stream) return [];
 
-    const res = await fetch(indexBlob.url);
-    if (!res.ok) return [];
-    return (await res.json()) as Job[];
+    const text = await readStream(result.stream);
+    return JSON.parse(text) as Job[];
   } catch {
     return [];
   }
