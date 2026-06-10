@@ -99,6 +99,8 @@ export async function blobInsertJobs(
     jobs.push({
       ...job,
       id: newId(),
+      applied_at: null,
+      apply_channel: null,
       created_at: now,
       updated_at: now,
     });
@@ -113,7 +115,7 @@ export async function blobInsertJobs(
 export async function blobUpdateJobStatus(
   id: string,
   status: Job["status"],
-  extra?: Partial<Pick<Job, "application_folder" | "github_commit_sha">>
+  extra?: Partial<Pick<Job, "application_folder" | "github_commit_sha" | "applied_at" | "apply_channel">>
 ): Promise<Job | null> {
   const jobs = await readIndex();
   const idx = jobs.findIndex((j) => j.id === id);

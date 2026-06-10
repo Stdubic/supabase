@@ -10,6 +10,8 @@ interface JobListProps {
   showActions?: boolean;
   showFolder?: boolean;
   isPreparing?: boolean;
+  showApplyAction?: boolean;
+  showAppliedInfo?: boolean;
 }
 
 export function JobList({
@@ -17,6 +19,8 @@ export function JobList({
   showActions,
   showFolder,
   isPreparing,
+  showApplyAction,
+  showAppliedInfo,
 }: JobListProps) {
   return (
     <div className="job-list">
@@ -27,6 +31,8 @@ export function JobList({
           showActions={showActions}
           showFolder={showFolder}
           isPreparing={isPreparing}
+          showApplyAction={showApplyAction}
+          showAppliedInfo={showAppliedInfo}
         />
       ))}
     </div>
@@ -44,13 +50,17 @@ function JobCard({
   showActions,
   showFolder,
   isPreparing,
+  showApplyAction,
+  showAppliedInfo,
 }: {
   job: Job;
   showActions?: boolean;
   showFolder?: boolean;
   isPreparing?: boolean;
+  showApplyAction?: boolean;
+  showAppliedInfo?: boolean;
 }) {
-  const [loading, setLoading] = useState<"approve" | "reject" | null>(null);
+  const [loading, setLoading] = useState<"approve" | "reject" | "apply" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [emailDraft, setEmailDraft] = useState<EmailDraft | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
@@ -132,6 +142,39 @@ function JobCard({
     } catch {
       setError("Failed to copy");
     }
+  }
+
+  async function handleMarkApplied(channel: string = "email") {
+    setLoading("apply");
+    setError(null);
+
+    try {
+      const res = await fetch(`/api/jobs/${job.id}/apply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channel }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to mark as applied");
+      }
+
+      window.location.reload();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to mark as applied");
+      setLoading(null);
+    }
+  }
+
+  function formatDate(isoDate: string | null): string {
+    if (!isoDate) return "";
+    const date = new Date(isoDate);
+    return date.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
   }
 
   function buildMailtoUrl(): string | null {
@@ -274,6 +317,47 @@ function JobCard({
                   </span>
                 )}
               </div>
+
+              {/* Mark as Applied button */}
+              {showApplyAction && (
+                <div style={{ marginTop: "12px", display: "flex", gap: "8px" }}>
+                  <button
+                    onClick={() => handleMarkApplied("email")}
+                    disabled={loading !== null}
+                    className="btn btn-applied"
+                    style={{ fontSize: "13px", padding: "6px 12px" }}
+                  >
+                    {loading === "apply" ? "..." : "Mark as Applied (Email)"}
+                  </button>
+                  <button
+                    onClick={() => handleMarkApplied("portal")}
+                    disabled={loading !== null}
+                    className="btn"
+                    style={{
+                      fontSize: "13px",
+                      padding: "6px 12px",
+                      background: "#6366f1",
+                      color: "#fff",
+                    }}
+                  >
+                    {loading === "apply" ? "..." : "Mark as Applied (Portal)"}
+                  </button>
+                </div>
+              )}
+
+              {/* Applied info */}
+              {showAppliedInfo && job.applied_at && (
+                <p
+                  style={{
+                    marginTop: "8px",
+                    fontSize: "13px",
+                    color: "#60a5fa",
+                  }}
+                >
+                  Applied {formatDate(job.applied_at)}
+                  {job.apply_channel && ` via ${job.apply_channel}`}
+                </p>
+              )}
             </div>
           )}
 

@@ -66,6 +66,8 @@ export async function POST(request: NextRequest) {
         status: "pending",
         application_folder: null,
         github_commit_sha: null,
+        applied_at: null,
+        apply_channel: null,
       });
     }
 

@@ -14,6 +14,15 @@ export default async function InboxPage() {
   const pendingJobs = await getJobs("pending");
   const approvedJobs = await getJobs("approved");
   const preparedJobs = await getJobs("prepared");
+  const appliedJobs = await getJobs("applied");
+  const interviewJobs = await getJobs("interview");
+
+  const hasJobs =
+    pendingJobs.length > 0 ||
+    approvedJobs.length > 0 ||
+    preparedJobs.length > 0 ||
+    appliedJobs.length > 0 ||
+    interviewJobs.length > 0;
 
   return (
     <div className="container">
@@ -21,14 +30,16 @@ export default async function InboxPage() {
         <h1 style={{ margin: 0, fontSize: "28px" }}>Job Inbox</h1>
         <div className="stats">
           <span className="stat-pending">{pendingJobs.length} pending</span>
-          <span className="stat-approved">{approvedJobs.length} approved</span>
-          <span className="stat-prepared">{preparedJobs.length} prepared</span>
+          <span className="stat-approved">{approvedJobs.length} preparing</span>
+          <span className="stat-prepared">{preparedJobs.length} ready</span>
+          <span className="stat-applied">{appliedJobs.length} applied</span>
+          {interviewJobs.length > 0 && (
+            <span className="stat-interview">{interviewJobs.length} interview</span>
+          )}
         </div>
       </header>
 
-      {pendingJobs.length === 0 &&
-      approvedJobs.length === 0 &&
-      preparedJobs.length === 0 ? (
+      {!hasJobs ? (
         <div className="empty-state">
           <p style={{ fontSize: "18px" }}>No jobs yet</p>
           <p style={{ fontSize: "14px" }}>
@@ -47,7 +58,7 @@ export default async function InboxPage() {
           {approvedJobs.length > 0 && (
             <section style={{ marginBottom: "40px" }}>
               <h2 className="section-title stat-approved">
-                Approved (preparing...)
+                Preparing...
               </h2>
               <JobList jobs={approvedJobs} isPreparing />
             </section>
@@ -56,7 +67,21 @@ export default async function InboxPage() {
           {preparedJobs.length > 0 && (
             <section style={{ marginBottom: "40px" }}>
               <h2 className="section-title stat-prepared">Ready to Apply</h2>
-              <JobList jobs={preparedJobs} showFolder />
+              <JobList jobs={preparedJobs} showFolder showApplyAction />
+            </section>
+          )}
+
+          {appliedJobs.length > 0 && (
+            <section style={{ marginBottom: "40px" }}>
+              <h2 className="section-title stat-applied">Applied</h2>
+              <JobList jobs={appliedJobs} showFolder showAppliedInfo />
+            </section>
+          )}
+
+          {interviewJobs.length > 0 && (
+            <section style={{ marginBottom: "40px" }}>
+              <h2 className="section-title stat-interview">Interview</h2>
+              <JobList jobs={interviewJobs} showFolder />
             </section>
           )}
         </>

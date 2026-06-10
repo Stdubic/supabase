@@ -44,6 +44,11 @@ button {
   color: #fff;
 }
 
+.btn-applied {
+  background: #a78bfa;
+  color: #fff;
+}
+
 .btn-primary {
   background: #3b82f6;
   color: #fff;
@@ -129,6 +134,8 @@ button {
 .stat-pending { color: #fbbf24; }
 .stat-approved { color: #60a5fa; }
 .stat-prepared { color: #34d399; }
+.stat-applied { color: #a78bfa; }
+.stat-interview { color: #f472b6; }
 
 .section-title {
   font-size: 18px;

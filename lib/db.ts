@@ -36,6 +36,18 @@ function requireStore(): "supabase" | "blob" {
   );
 }
 
+export type JobStatus =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "prepared"
+  | "failed"
+  | "applied"
+  | "interview"
+  | "offer"
+  | "declined"
+  | "withdrawn";
+
 export interface Job {
   id: string;
   title: string;
@@ -46,9 +58,11 @@ export interface Job {
   location: string | null;
   salary: string | null;
   score: number;
-  status: "pending" | "approved" | "rejected" | "prepared" | "failed";
+  status: JobStatus;
   application_folder: string | null;
   github_commit_sha: string | null;
+  applied_at: string | null;
+  apply_channel: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -129,10 +143,14 @@ export async function insertJobs(
   return blobInsertJobs(jobs);
 }
 
+export type JobUpdateExtra = Partial<
+  Pick<Job, "application_folder" | "github_commit_sha" | "applied_at" | "apply_channel">
+>;
+
 export async function updateJobStatus(
   id: string,
-  status: Job["status"],
-  extra?: Partial<Pick<Job, "application_folder" | "github_commit_sha">>
+  status: JobStatus,
+  extra?: JobUpdateExtra
 ): Promise<Job | null> {
   const store = requireStore();
 
