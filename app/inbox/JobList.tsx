@@ -1,15 +1,23 @@
 "use client";
 
 import { Job } from "@/lib/db";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+
+const GITHUB_REPO = "Stdubic/CV";
 
 interface JobListProps {
   jobs: Job[];
   showActions?: boolean;
   showFolder?: boolean;
+  isPreparing?: boolean;
 }
 
-export function JobList({ jobs, showActions, showFolder }: JobListProps) {
+export function JobList({
+  jobs,
+  showActions,
+  showFolder,
+  isPreparing,
+}: JobListProps) {
   return (
     <div className="job-list">
       {jobs.map((job) => (
@@ -18,23 +26,82 @@ export function JobList({ jobs, showActions, showFolder }: JobListProps) {
           job={job}
           showActions={showActions}
           showFolder={showFolder}
+          isPreparing={isPreparing}
         />
       ))}
     </div>
   );
 }
 
+interface EmailDraft {
+  to: string;
+  subject: string;
+  body: string;
+}
+
 function JobCard({
   job,
   showActions,
   showFolder,
+  isPreparing,
 }: {
   job: Job;
   showActions?: boolean;
   showFolder?: boolean;
+  isPreparing?: boolean;
 }) {
   const [loading, setLoading] = useState<"approve" | "reject" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [emailDraft, setEmailDraft] = useState<EmailDraft | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
+  const [loadingDraft, setLoadingDraft] = useState(false);
+
+  // Poll for status change when preparing
+  useEffect(() => {
+    if (!isPreparing) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/jobs?status=approved`);
+        if (res.ok) {
+          const data = await res.json();
+          const stillApproved = data.jobs?.some(
+            (j: Job) => j.id === job.id && j.status === "approved"
+          );
+          if (!stillApproved) {
+            window.location.reload();
+          }
+        }
+      } catch {
+        // ignore polling errors
+      }
+    }, 15000);
+
+    return () => clearInterval(interval);
+  }, [isPreparing, job.id]);
+
+  // Fetch email draft when folder is available
+  const fetchEmailDraft = useCallback(async () => {
+    if (!job.application_folder || emailDraft) return;
+    setLoadingDraft(true);
+    try {
+      const res = await fetch(`/api/jobs/${job.id}/email-draft`);
+      if (res.ok) {
+        const data = await res.json();
+        setEmailDraft(data);
+      }
+    } catch {
+      // Draft not available yet
+    } finally {
+      setLoadingDraft(false);
+    }
+  }, [job.id, job.application_folder, emailDraft]);
+
+  useEffect(() => {
+    if (showFolder && job.application_folder) {
+      fetchEmailDraft();
+    }
+  }, [showFolder, job.application_folder, fetchEmailDraft]);
 
   async function handleAction(action: "approve" | "reject") {
     setLoading(action);
@@ -56,6 +123,30 @@ function JobCard({
       setLoading(null);
     }
   }
+
+  async function copyToClipboard(text: string, label: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(label);
+      setTimeout(() => setCopied(null), 2000);
+    } catch {
+      setError("Failed to copy");
+    }
+  }
+
+  function buildMailtoUrl(): string | null {
+    if (!emailDraft) return null;
+    const params = new URLSearchParams();
+    params.set("subject", emailDraft.subject);
+    params.set("body", emailDraft.body);
+    return `mailto:${encodeURIComponent(emailDraft.to)}?${params.toString()}`;
+  }
+
+  const githubFolderUrl = job.application_folder
+    ? `https://github.com/${GITHUB_REPO}/tree/main/applications/${job.application_folder}`
+    : null;
+
+  const mailtoUrl = buildMailtoUrl();
 
   return (
     <div className="card">
@@ -100,11 +191,105 @@ function JobCard({
               {job.description.length > 280 && "..."}
             </p>
           )}
+
+          {/* Prepared job: folder link and actions */}
           {showFolder && job.application_folder && (
-            <p style={{ margin: "12px 0 0", fontSize: "14px", color: "#34d399" }}>
-              Folder: {job.application_folder}
+            <div style={{ marginTop: "16px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  marginBottom: "12px",
+                  flexWrap: "wrap",
+                }}
+              >
+                <span
+                  style={{ fontSize: "14px", color: "#34d399", fontWeight: 500 }}
+                >
+                  {job.application_folder}
+                </span>
+                {githubFolderUrl && (
+                  <a
+                    href={githubFolderUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-small"
+                    style={{ fontSize: "12px", padding: "4px 10px" }}
+                  >
+                    Open on GitHub
+                  </a>
+                )}
+              </div>
+
+              {/* Apply actions */}
+              <div
+                style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}
+              >
+                {loadingDraft ? (
+                  <span style={{ fontSize: "13px", color: "#888" }}>
+                    Loading email draft...
+                  </span>
+                ) : emailDraft ? (
+                  <>
+                    {mailtoUrl && (
+                      <a
+                        href={mailtoUrl}
+                        className="btn btn-approve"
+                        style={{ fontSize: "13px", padding: "6px 12px" }}
+                      >
+                        Open in Email
+                      </a>
+                    )}
+                    <button
+                      onClick={() =>
+                        copyToClipboard(emailDraft.body, "email")
+                      }
+                      className="btn"
+                      style={{
+                        fontSize: "13px",
+                        padding: "6px 12px",
+                        background: "#374151",
+                      }}
+                    >
+                      {copied === "email" ? "Copied!" : "Copy Email Body"}
+                    </button>
+                    <button
+                      onClick={() =>
+                        copyToClipboard(emailDraft.subject, "subject")
+                      }
+                      className="btn"
+                      style={{
+                        fontSize: "13px",
+                        padding: "6px 12px",
+                        background: "#374151",
+                      }}
+                    >
+                      {copied === "subject" ? "Copied!" : "Copy Subject"}
+                    </button>
+                  </>
+                ) : (
+                  <span style={{ fontSize: "13px", color: "#888" }}>
+                    Email draft not available — check GitHub folder
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Preparing indicator */}
+          {isPreparing && (
+            <p
+              style={{
+                margin: "12px 0 0",
+                fontSize: "14px",
+                color: "#fbbf24",
+              }}
+            >
+              Preparing application... (auto-refreshes)
             </p>
           )}
+
           {error && <p className="error">{error}</p>}
         </div>
 

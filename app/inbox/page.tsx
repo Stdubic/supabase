@@ -49,7 +49,7 @@ export default async function InboxPage() {
               <h2 className="section-title stat-approved">
                 Approved (preparing...)
               </h2>
-              <JobList jobs={approvedJobs} />
+              <JobList jobs={approvedJobs} isPreparing />
             </section>
           )}
 
