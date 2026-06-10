@@ -1,4 +1,24 @@
-# Fix: "Credentials not found" on Ingest to Vercel
+# n8n setup — no Supabase, no ingest credentials
+
+## "Set up credentials — Supabase"
+
+**Ignore this.** Our workflows have **no Supabase node**. Storage is Vercel Blob (already configured on Vercel).
+
+You see this if you imported the **wrong workflow** (n8n template, old copy, or wrong file from GitHub). Close the wizard and import:
+
+```
+https://raw.githubusercontent.com/Stdubic/supabase/main/n8n/workflow-test-ingest.json
+```
+
+Correct workflow name: **Job Agent - Test Ingest** — only 4 nodes:
+
+`Manual Test` → `Fetch Remotive` → `Parse and Filter` → `Ingest to Vercel` (Code)
+
+Repo name is `supabase` for historical reasons; n8n does **not** need a Supabase account.
+
+---
+
+## Fix: "Credentials not found" on Ingest to Vercel
 
 The ingest step is a **Code** node (not HTTP Request). It calls the API with `this.helpers.httpRequest` and needs **no n8n credentials**.
 

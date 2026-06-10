@@ -32,16 +32,11 @@ vercel
 
 ## Setup
 
-### 1. Supabase
+### 1. Storage (Vercel Blob — default)
 
-1. Create a free project at [supabase.com](https://supabase.com)
-2. Go to SQL Editor and run the migration:
+Jobs are stored in **Vercel Blob** (`job-agent-store`). No Supabase or n8n credentials required for the workflows.
 
-```sql
--- Copy contents of supabase/migrations/001_jobs.sql
-```
-
-3. Copy your project URL and service role key from Settings → API
+Optional: use Supabase Postgres instead — create a project, run `supabase/migrations/001_jobs.sql`, set `SUPABASE_URL` + `SUPABASE_SERVICE_KEY` in Vercel.
 
 ### 2. Deploy to Vercel
 

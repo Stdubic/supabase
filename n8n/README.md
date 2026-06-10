@@ -1,5 +1,7 @@
 # n8n workflows
 
+**No Supabase credential needed.** Jobs are stored on Vercel Blob via the ingest API. If n8n asks for Supabase, you imported the wrong workflow — use the URLs below.
+
 | File | Purpose |
 |------|---------|
 | `workflow-test-ingest.json` | Manual test: Remotive → filter → ingest (use this first) |

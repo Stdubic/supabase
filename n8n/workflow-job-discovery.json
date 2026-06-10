@@ -181,16 +181,11 @@
         "message": "=Job Agent found {{ $('Filter Duplicates').all().length }} new job postings.\n\nTop matches:\n{{ $('Filter Duplicates').all().slice(0, 5).map(j => `- ${j.json.title} at ${j.json.company}`).join('\\n') }}\n\nReview and approve: https://job-agent-eosin.vercel.app/inbox"
       },
       "id": "send-notification",
-      "name": "Send Email",
+      "name": "Send Email (optional)",
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
       "position": [1540, 200],
-      "credentials": {
-        "smtp": {
-          "id": "smtp-creds",
-          "name": "SMTP"
-        }
-      }
+      "disabled": true
     },
     {
       "parameters": {
@@ -271,9 +266,7 @@
       ]
     },
     "Ingest to Vercel": {
-      "main": [
-        [{ "node": "Send Email", "type": "main", "index": 0 }]
-      ]
+      "main": [[]]
     }
   },
   "settings": {
